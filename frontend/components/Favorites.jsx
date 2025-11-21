@@ -16,7 +16,7 @@
         ),
         loading?React.createElement("div",{className:"loading"},"Cargando..."):
         items.length?React.createElement("div",{className:"catalog-grid"},items.map((p,i)=>React.createElement("div",{key:(p?.id||i),className:"product-card"},
-          React.createElement("div",{className:"img-wrap"},React.createElement("img",{src:(p?.imagen||p?.image||"https://via.placeholder.com/600x400?text=Producto"),alt:(p?.nombre||"Producto")})),
+          React.createElement("div",{className:"img-wrap"},React.createElement("img",{src:(p?.imagen||p?.image||"https://placehold.co/600x400?text=Producto"),alt:(p?.nombre||"Producto")})),
           React.createElement("div",{className:"info"},React.createElement("div",{className:"name"},p?.nombre||"Producto"))
         ))):React.createElement("div",{className:"msg"},"Aún no tienes favoritos")
       )

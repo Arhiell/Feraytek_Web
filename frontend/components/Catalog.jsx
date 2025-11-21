@@ -37,13 +37,19 @@
     async function add(p){
       try{
         const id = p.id_producto||p.idProducto||p.id||p.producto_id;
-        const variante_id = p.variante_id||p.id_variante||p.variant_id;
-        await window.CartController.add({ producto_id:id, cantidad:1, variante_id });
+        let variante_id = p.variante_id||p.id_variante||p.variant_id;
+        if((variante_id===undefined||variante_id===null) && Array.isArray(p.variantes) && p.variantes.length){
+          const v0 = p.variantes[0];
+          variante_id = v0?.id_variante||v0?.variante_id||v0?.id;
+        }
+        const precio_unitario = p.precio_base!=null? p.precio_base : (p.precio!=null? p.precio : (p.price!=null? p.price : 0));
+        const iva_porcentaje = p.iva_porcentaje!=null? p.iva_porcentaje : (p.iva!=null? p.iva : 0);
+        await window.CartController.add({ producto_id:id, cantidad:1, variante_id, precio:precio_unitario, precio_unitario, iva_porcentaje });
         setMsg({type:"ok",text:"Agregado al carrito"}); setTimeout(()=>setMsg(null),1600);
       }catch(e){ setMsg({type:"error",text:e.message||"No se pudo agregar"}); setTimeout(()=>setMsg(null),2000); }
     }
     function card(p){
-      const img = p.imagen||p.image||p.img||"https://via.placeholder.com/600x400?text=Producto";
+      const img = p.imagen||p.image||p.img||"https://placehold.co/600x400?text=Producto";
       const name = p.nombre||p.title||p.name||"Producto";
       const price = p.precio!=null?p.precio:(p.price!=null?p.price:"");
       return React.createElement("div",{className:"product-card"},

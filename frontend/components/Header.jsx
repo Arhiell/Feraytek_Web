@@ -1,18 +1,23 @@
 (function(){
   const { useState, useEffect } = React;
-  function Header({ onUserClick, onCartClick, onFavClick, onNavHome, onNavProducts, onNavOffers, onNavContact, onSearchChange, onSearchSubmit }){
+  function Header({ onUserClick, onCartClick, onFavClick, onNavHome, onNavProducts, onNavOffers, onNavContact, onNavSupport, onNavOrders, onSearchChange, onSearchSubmit }){
     const [open,setOpen] = useState(false);
     const [q,setQ] = useState("");
+    const [curr,setCurr] = useState((window.Feraytek && window.Feraytek.route) || "");
     useEffect(()=>{ try{ document.body.style.overflow = open?"hidden":""; }catch{} return ()=>{ try{ document.body.style.overflow=""; }catch{} }; },[open]);
+    useEffect(()=>{ function onRoute(ev){ const r=(ev&&ev.detail&&ev.detail.route)||""; setCurr(r); } window.addEventListener("feraytek:route", onRoute); return ()=> window.removeEventListener("feraytek:route", onRoute); },[]);
     function goHome(){ if(onNavHome) onNavHome(); else if(window.Feraytek && typeof window.Feraytek.go==="function") window.Feraytek.go("landing"); setOpen(false); }
     function goProducts(){ if(onNavProducts) onNavProducts(); else if(window.Feraytek && typeof window.Feraytek.go==="function") window.Feraytek.go("catalog"); setOpen(false); }
     function goOffers(){ if(onNavOffers) onNavOffers(); else if(window.Feraytek && typeof window.Feraytek.go==="function") window.Feraytek.go("offers"); setOpen(false); }
     function goContact(){ if(onNavContact) onNavContact(); else if(window.Feraytek && typeof window.Feraytek.go==="function") window.Feraytek.go("contact"); setOpen(false); }
+    function goSupport(){ if(onNavSupport) onNavSupport(); else if(window.Feraytek && typeof window.Feraytek.go==="function") window.Feraytek.go("support"); setOpen(false); }
+    function goOrders(){ if(onNavOrders) onNavOrders(); else if(window.Feraytek && typeof window.Feraytek.go==="function") window.Feraytek.go("orders"); setOpen(false); }
     function goProfile(){ if(onUserClick) onUserClick(); else if(window.Feraytek && typeof window.Feraytek.go==="function") window.Feraytek.go("profile"); setOpen(false); }
     function goCart(){ if(onCartClick) onCartClick(); else if(window.Feraytek && typeof window.Feraytek.go==="function") window.Feraytek.go("cart"); setOpen(false); }
     function goFav(){ if(onFavClick) onFavClick(); else if(window.Feraytek && typeof window.Feraytek.go==="function") window.Feraytek.go("favorites"); setOpen(false); }
     function submit(){ if(onSearchSubmit) { onSearchSubmit(q); } else { try{ window.Feraytek.searchQ = q; window.dispatchEvent(new CustomEvent("feraytek:search",{ detail:{ q } })); if(window.Feraytek && typeof window.Feraytek.go==="function") window.Feraytek.go("catalog"); }catch{} } }
     function link(label,fn){ return React.createElement("a",{className:"menu-link",onClick:fn},label); }
+    function cls(name){ return "menu-item" + (name?" ":"") + (name&&((name==="landing"&&curr==="landing")||(name==="catalog"&&(curr==="catalog"||curr==="product"))||(name==="offers"&&curr==="offers")||(name==="orders"&&curr==="orders")||(name==="contact"&&curr==="contact")||(name==="support"&&curr==="support"))?"active":""); }
     return (
       React.createElement(React.Fragment,null,
         React.createElement("div",{className:"header" + (open?" open":"")},
@@ -21,10 +26,12 @@
           ),
           React.createElement("button",{className:"logo",onClick:goHome,title:"Feraytek"},"Feraytek"),
           React.createElement("nav",{className:"menu"},
-            React.createElement("a",{className:"menu-item active",onClick:goHome},"Home"),
-            React.createElement("a",{className:"menu-item",onClick:goProducts},"Productos"),
-            React.createElement("a",{className:"menu-item",onClick:goOffers},"Ofertas"),
-            React.createElement("a",{className:"menu-item",onClick:goContact},"Contacto")
+            React.createElement("a",{className:cls("landing"),onClick:goHome},"Home"),
+            React.createElement("a",{className:cls("catalog"),onClick:goProducts},"Productos"),
+            React.createElement("a",{className:cls("offers"),onClick:goOffers},"Ofertas"),
+            React.createElement("a",{className:cls("orders"),onClick:goOrders},"Pedidos"),
+            React.createElement("a",{className:cls("contact"),onClick:goContact},"Contacto"),
+            React.createElement("a",{className:cls("support"),onClick:goSupport},"Soporte")
           ),
           React.createElement("div",{className:"tools"},
             React.createElement("div",{className:"search"},
@@ -53,7 +60,9 @@
             link("Home",goHome),
             link("Productos",goProducts),
             link("Ofertas",goOffers),
+            link("Pedidos",goOrders),
             link("Contacto",goContact),
+            link("Soporte",goSupport),
             link("Perfil",goProfile),
             link("Carrito",goCart),
             link("Favoritos",goFav)

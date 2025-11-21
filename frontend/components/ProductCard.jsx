@@ -1,6 +1,6 @@
 (function(){
   function ProductCard({ product, onView, onAdd }){
-    const img = product.imagen || product.image || product.img || "https://via.placeholder.com/600x400?text=Producto";
+    const img = product.imagen || product.image || product.img || "https://placehold.co/600x400?text=Producto";
     const name = product.nombre || product.title || product.name || "Producto";
     const price = product.precio != null ? product.precio : (product.price != null ? product.price : "");
     const id = product.id || product.id_producto || product.idProducto || product.producto_id;

@@ -10,6 +10,7 @@
     const [err,setErr] = useState(null);
     const [msg,setMsg] = useState(null);
     const [adding,setAdding] = useState(false);
+    const [variante,setVariante] = useState(null);
 
     useEffect(()=>{
       (async()=>{
@@ -18,11 +19,18 @@
           const res = await window.ProductController.detail(productId);
           const d = res.data||res.product||res;
           setP(d);
+          try{
+            if(Array.isArray(d?.variantes) && d.variantes.length){
+              const v0 = d.variantes[0];
+              const idv = v0?.id_variante||v0?.variante_id||v0?.id;
+              setVariante(idv||null);
+            } else { setVariante(null); }
+          }catch{}
         }catch(e){ setErr(e.message||"Error al cargar producto"); }
       })();
     },[productId]);
 
-    const img = (p&& (p.imagen||p.image||p.img)) || "https://via.placeholder.com/800x500?text=Producto";
+    const img = (p&& (p.imagen||p.image||p.img)) || "https://placehold.co/800x500?text=Producto";
     const name = (p&& (p.nombre||p.title||p.name)) || "Producto";
     const price = p && (p.precio!=null?p.precio:(p.price!=null?p.price:""));
     const desc = (p&& (p.descripcion||p.description)) || "Sin descripción";
@@ -32,8 +40,10 @@
       setAdding(true); setMsg(null);
       try{
         const id = p.id_producto||p.idProducto||p.id;
-        const variante_id = p.variante_id||p.id_variante||p.variant_id;
-        await window.CartController.add({ producto_id:id, cantidad:1, variante_id });
+        let variante_id = (variante!=null?variante:(p.variante_id||p.id_variante||p.variant_id));
+        const precio_unitario = p.precio_base!=null? p.precio_base : (p.precio!=null? p.precio : (p.price!=null? p.price : 0));
+        const iva_porcentaje = p.iva_porcentaje!=null? p.iva_porcentaje : (p.iva!=null? p.iva : 0);
+        await window.CartController.add({ producto_id:id, cantidad:1, variante_id, precio_unitario, iva_porcentaje });
         setMsg({type:"ok",text:"Agregado al carrito"});
       }catch(e){ setMsg({type:"error",text:e.message||"No se pudo agregar"}); }
       finally{ setAdding(false); }
@@ -52,6 +62,16 @@
               React.createElement("div",{className:"price"}, price!==""?`$${price}`:""),
               React.createElement("p",{className:"desc"},desc),
               React.createElement("div",{className:"actions"},
+                Array.isArray(p?.variantes)&&p.variantes.length?React.createElement("div",{className:"field"},
+                  React.createElement("label",null,"Variante"),
+                  React.createElement("select",{className:"input",value:(variante??""),onChange:e=>{ const v=e.target.value; setVariante(v?Number(v):null); }},
+                    p.variantes.map(v=>{
+                      const idv = v?.id_variante||v?.variante_id||v?.id;
+                      const nombre = v?.nombre||v?.name||v?.descripcion||"Variante";
+                      return React.createElement("option",{key:idv,value:idv},nombre);
+                    })
+                  )
+                ):null,
                 React.createElement("button",{className:"btn primary",onClick:addToCart,disabled:adding},adding?"Agregando...":"Agregar al carrito"),
                 React.createElement("button",{className:"btn secondary",onClick:onGoCart},"Ver carrito")
               )

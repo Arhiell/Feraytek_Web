@@ -3,7 +3,10 @@
 // Mantiene respuestas en JSON y evita CORS usando ruta relativa /api
 
 (function(){
-  const base = "/api"; // proxy del server frontend -> backend:3000
+  function getBase(){
+    const cfg = (typeof window!=="undefined" && window.Feraytek && window.Feraytek.API) || {};
+    return cfg.base || "/api";
+  }
   async function parse(r){
     const ct = (r.headers.get("content-type")||"").toLowerCase();
     if(ct.includes("application/json")){
@@ -19,17 +22,20 @@
   async function list({ page=1, limit=12, categoria, q }={}){
     const headers={};
     const tok=localStorage.getItem("token")||""; if(tok) headers["Authorization"]="Bearer "+tok;
+    const base = getBase();
     const url = `${base}/productos${qs({page,limit,categoria,q})}`;
     const r = await fetch(url,{ headers, credentials:"omit" });
     const j = await parse(r); if(!r.ok) throw { status:r.status, ...j }; return j;
   }
   async function detail(id){
     const headers={}; const tok=localStorage.getItem("token")||""; if(tok) headers["Authorization"]="Bearer "+tok;
+    const base = getBase();
     const r = await fetch(`${base}/productos/${id}`,{ headers, credentials:"omit" });
     const j = await parse(r); if(!r.ok) throw { status:r.status, ...j }; return j;
   }
   async function categories(){
     const headers={}; const tok=localStorage.getItem("token")||""; if(tok) headers["Authorization"]="Bearer "+tok;
+    const base = getBase();
     const r = await fetch(`${base}/productos/categorias`,{ headers, credentials:"omit" });
     const j = await parse(r); if(!r.ok) throw { status:r.status, ...j }; return j;
   }

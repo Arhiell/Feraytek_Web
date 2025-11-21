@@ -227,7 +227,10 @@ function App(){
   const [productId,setProductId]=useState(null);
   function logout(){localStorage.removeItem("token");setUsuario(null)}
   window.Feraytek = window.Feraytek || {};
+  window.Feraytek.API = window.Feraytek.API || { base:"http://localhost:3000/api" };
+  try{ window.Feraytek.usuario = usuario; }catch{}
   window.Feraytek.go = (r)=>{ try{ setRoute(r); }catch{} };
+  React.useEffect(()=>{ try{ window.Feraytek.route = route; window.dispatchEvent(new CustomEvent("feraytek:route",{ detail:{ route } })); }catch{} },[route]);
   return (
     React.createElement("div",{className:usuario?"wrap full":"wrap"},
       !usuario?React.createElement("div",null,
@@ -259,6 +262,12 @@ function App(){
           (window.Feraytek && window.Feraytek.Cart?
               React.createElement(window.Feraytek.Cart,{onBack:()=>setRoute("catalog")})
               : React.createElement("div",{className:"msg error"},"No se pudo cargar la página de Carrito. Recarga la página."))
+        : route==="checkout"?
+          (window.Feraytek && window.Feraytek.Checkout?React.createElement(window.Feraytek.Checkout,{}):React.createElement("div",{className:"msg error"},"No se pudo cargar Checkout"))
+        : route==="support"?
+          (window.Feraytek && window.Feraytek.Support?React.createElement(window.Feraytek.Support,{}):React.createElement("div",{className:"msg error"},"No se pudo cargar Soporte"))
+          : route==="orders"?
+            (window.Feraytek && window.Feraytek.OrderHistory?React.createElement(window.Feraytek.OrderHistory,{}):React.createElement("div",{className:"msg error"},"No se pudo cargar Historial"))
           : (window.Feraytek && window.Feraytek.ProductDetail?React.createElement(window.Feraytek.ProductDetail,{productId,onBack:()=>setRoute("catalog"),onGoCart:()=>setRoute("cart")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Detalle"))
       )
     )

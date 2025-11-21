@@ -1,5 +1,22 @@
 ;(function(){
-  const base = "/api";
+  function getBase(){
+    const cfg = (typeof window!=="undefined" && window.Feraytek && window.Feraytek.API) || {};
+    return cfg.base || "/api";
+  }
+  function buildPaths(){
+    const cfg = (typeof window!=="undefined" && window.Feraytek && window.Feraytek.API) || {};
+    const base = getBase();
+    return {
+      list: cfg.cartList || `${base}/carrito`,
+      add: cfg.cartAdd || `${base}/carrito`,
+      update: (id)=> (cfg.cartUpdate? cfg.cartUpdate.replace(":id",encodeURIComponent(id)) : `${base}/carrito/items/${encodeURIComponent(id)}`),
+      updateItem: cfg.cartUpdateItem || `${base}/carrito/item`,
+      removeItem: cfg.cartRemoveItem || `${base}/carrito/item`,
+      clear: cfg.cartClear || `${base}/carrito`,
+      shipping: cfg.shippingMethods || `${base}/envios/metodos`,
+      checkout: cfg.checkout || `${base}/carrito/checkout`
+    };
+  }
   async function parse(r){
     const ct = (r.headers.get("content-type")||"").toLowerCase();
     if(ct.includes("application/json")) { try { return await r.json(); } catch{} }
@@ -21,34 +38,97 @@
     return p.length?`?${p.join("&")}`:"";
   }
   async function get(){
-    return await tryFetch([`${base}/carrito`,`${base}/cart`,`${base}/carrito/mio`],{ method:"GET" });
+    const P = buildPaths();
+    return await tryFetch([P.list],{ method:"GET" });
   }
-  async function add(item){
-    const body = JSON.stringify(item);
-    return await tryFetch([`${base}/carrito/agregar`,`${base}/cart/add`],{ method:"POST", body, headers:{"Content-Type":"application/json"} });
+  async function add(item, opts){
+    const id_producto = item.id_producto||item.producto_id||item.id||item.productoId||null;
+    let id_variante = (item.id_variante||item.variante_id||item.variant_id);
+    if(id_variante===0 || id_variante==="0" || id_variante===undefined) id_variante = null;
+    const cantidad = item.cantidad!=null? item.cantidad : 1;
+    const precio_unitario = item.precio_unitario!=null? Number(item.precio_unitario) : Number(item.precio??item.price??0);
+    const iva_porcentaje = item.iva_porcentaje!=null? Number(item.iva_porcentaje) : Number(item.iva??0);
+    const payload = { id_producto, id_variante, cantidad, precio_unitario, iva_porcentaje };
+    try{
+      const u = (typeof window!=="undefined" && window.Feraytek && window.Feraytek.usuario) || null;
+      const id_usuario = u && (u.id_usuario||u.id||u.user_id);
+      if(id_usuario!=null) payload.id_usuario = id_usuario;
+    }catch{}
+    const body = JSON.stringify(payload);
+    const P = buildPaths();
+    const res = await tryFetch([P.add],{ method:"POST", body, headers:{"Content-Type":"application/json"} });
+    if(!(opts&&opts.silent)){
+      try{ const latest = await tryFetch([P.list],{ method:"GET" }); const detail = latest.items||latest.data||latest.carrito||latest; window.dispatchEvent(new CustomEvent("feraytek:cart-updated",{ detail })); }catch{}
+    }
+    return res;
   }
-  async function update(itemId, cantidad){
-    const body = JSON.stringify({ cantidad });
-    const id = encodeURIComponent(itemId);
-    return await tryFetch([`${base}/carrito/items/${id}`,`${base}/carrito/item/${id}`,`${base}/cart/items/${id}`],{ method:"PATCH", body, headers:{"Content-Type":"application/json"} });
+  async function update(itemOrId, cantidad, opts){
+    const P = buildPaths();
+    const headers = { "Content-Type":"application/json" };
+    if(typeof itemOrId === "object" && itemOrId){
+      const id_producto = itemOrId.id_producto||itemOrId.producto_id||itemOrId.id||itemOrId.idProducto;
+      let id_variante = itemOrId.id_variante||itemOrId.variante_id||itemOrId.variant_id;
+      if(id_variante===0||id_variante==="0"||id_variante===undefined) id_variante = null;
+      const body1 = JSON.stringify({ id_producto, id_variante, cantidad });
+      try{
+        const res = await tryFetch([P.updateItem],{ method:"PUT", body: body1, headers });
+        if(!(opts&&opts.silent)){
+          try{ const latest = await tryFetch([P.list],{ method:"GET" }); const detail = latest.items||latest.data||latest.carrito||latest; window.dispatchEvent(new CustomEvent("feraytek:cart-updated",{ detail })); }catch{}
+        }
+        return res;
+      }catch(e){
+        if(e && e.status === 404){
+          const id = itemOrId.id||id_producto;
+          const body2 = JSON.stringify({ cantidad });
+          const res = await tryFetch([P.update(id)],{ method:"PATCH", body: body2, headers });
+          if(!(opts&&opts.silent)){
+            try{ const latest = await tryFetch([P.list],{ method:"GET" }); const detail = latest.items||latest.data||latest.carrito||latest; window.dispatchEvent(new CustomEvent("feraytek:cart-updated",{ detail })); }catch{}
+          }
+          return res;
+        }
+        throw e;
+      }
+    } else {
+      const id = itemOrId;
+      const body = JSON.stringify({ cantidad });
+      const res = await tryFetch([P.update(id)],{ method:"PATCH", body, headers });
+      if(!(opts&&opts.silent)){
+        try{ const latest = await tryFetch([P.list],{ method:"GET" }); const detail = latest.items||latest.data||latest.carrito||latest; window.dispatchEvent(new CustomEvent("feraytek:cart-updated",{ detail })); }catch{}
+      }
+      return res;
+    }
   }
-  async function remove(itemId){
-    const id = encodeURIComponent(itemId);
-    return await tryFetch([`${base}/carrito/items/${id}`,`${base}/carrito/item/${id}`,`${base}/cart/items/${id}`],{ method:"DELETE" });
+  async function remove(payload, opts){
+    const P = buildPaths();
+    const body = JSON.stringify({
+      id_producto: payload.id_producto||payload.producto_id||payload.id,
+      id_variante: (payload.id_variante===0||payload.id_variante==="0"||payload.id_variante===undefined)?null:payload.id_variante
+    });
+    const res = await tryFetch([P.removeItem],{ method:"DELETE", body, headers:{"Content-Type":"application/json"} });
+    if(!(opts&&opts.silent)){
+      try{ const latest = await tryFetch([P.list],{ method:"GET" }); const detail = latest.items||latest.data||latest.carrito||latest; window.dispatchEvent(new CustomEvent("feraytek:cart-updated",{ detail })); }catch{}
+    }
+    return res;
   }
   async function clear(){
-    return await tryFetch([`${base}/carrito`,`${base}/carrito/vaciar`,`${base}/cart`],{ method:"DELETE" });
+    const P = buildPaths();
+    const res = await tryFetch([P.clear],{ method:"DELETE" });
+    try{ const latest = await tryFetch([P.list],{ method:"GET" }); const detail = latest.items||latest.data||latest.carrito||latest; window.dispatchEvent(new CustomEvent("feraytek:cart-updated",{ detail })); }catch{}
+    return res;
   }
   async function configs(){
-    return await tryFetch([`${base}/config/carrito`,`${base}/configuraciones`,`${base}/carrito/config`],{ method:"GET" });
+    const base = getBase();
+    return await tryFetch([`${base}/config/carrito`],{ method:"GET" });
   }
   async function shippingMethods(){
-    return await tryFetch([`${base}/envios/metodos`,`${base}/shipping/methods`],{ method:"GET" });
+    const P = buildPaths();
+    return await tryFetch([P.shipping],{ method:"GET" });
   }
   async function checkout(payload){
     const body = JSON.stringify(payload);
     try{
-      return await tryFetch([`${base}/carrito/checkout`,`${base}/pedidos`],{ method:"POST", body, headers:{"Content-Type":"application/json"} });
+      const P = buildPaths();
+      return await tryFetch([P.checkout],{ method:"POST", body, headers:{"Content-Type":"application/json"} });
     }catch(e){ throw e; }
   }
   window.CartController = { get, add, update, remove, clear, configs, shippingMethods, checkout };

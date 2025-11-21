@@ -27,7 +27,12 @@
     useEffect(()=>{ loadCats(); load(); },[]);
     useEffect(()=>{ load(); },[cat]);
     function add(p){
-      try{ const id = p.id||p.id_producto||p.producto_id; window.CartController.add({ producto_id:id, cantidad:1 }); }catch{}
+      try{
+        const id = p.id||p.id_producto||p.producto_id;
+        const precio_unitario = p.precio_base!=null? p.precio_base : (p.precio!=null? p.precio : (p.price!=null? p.price : 0));
+        const iva_porcentaje = p.iva_porcentaje!=null? p.iva_porcentaje : (p.iva!=null? p.iva : 0);
+        window.CartController.add({ producto_id:id, cantidad:1, precio_unitario, iva_porcentaje });
+      }catch{}
     }
     return (
       React.createElement("section",{className:"catalog"},
