@@ -1,7 +1,7 @@
 (function(){
   const { useState, useEffect } = React;
   const { useForm, allowOnlyDigitsKeyDown } = window.Feraytek;
-  function Profile({ usuario, onBackHome }){
+  function Profile({ usuario, onBackHome, onGoCart }){
     function toDateValue(x){
       if(!x) return "";
       const s=String(x).trim();
@@ -113,7 +113,7 @@
     }
     return (
       React.createElement("div",{className:"profile"},
-        React.createElement(window.Feraytek.Header,{onUserClick:()=>{},onCartClick:()=>{},onFavClick:()=>{}}),
+        React.createElement(window.Feraytek.Header,{onUserClick:()=>{},onCartClick:onGoCart,onFavClick:()=>{}}),
         React.createElement("div",{className:"profile-wrap"},
           React.createElement("div",{className:"profile-card"},
             React.createElement("h2",{className:"page-title"},"Editar perfil"),

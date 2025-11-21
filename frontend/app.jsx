@@ -226,11 +226,16 @@ function App(){
   const [route,setRoute]=useState("landing");
   const [productId,setProductId]=useState(null);
   function logout(){localStorage.removeItem("token");setUsuario(null)}
+  window.Feraytek = window.Feraytek || {};
+  window.Feraytek.go = (r)=>{ try{ setRoute(r); }catch{} };
   return (
     React.createElement("div",{className:usuario?"wrap full":"wrap"},
       !usuario?React.createElement("div",null,
         React.createElement("div",{className:"brand"},"Feraytek"),
-        tab==="login"?React.createElement(window.Feraytek.Login,{onLogged:setUsuario}):React.createElement(window.Feraytek.Register,{onLogged:setUsuario,onBackToLogin:()=>setTab("login")}),
+        tab==="login"?
+          (window.Feraytek && window.Feraytek.Login?React.createElement(window.Feraytek.Login,{onLogged:setUsuario}):React.createElement("div",{className:"msg error"},"No se pudo cargar Login"))
+          :
+          (window.Feraytek && window.Feraytek.Register?React.createElement(window.Feraytek.Register,{onLogged:setUsuario,onBackToLogin:()=>setTab("login")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Registro")),
         tab==="login"?React.createElement("div",{className:"bottom-actions"},
           React.createElement("div",{className:"row"},
             React.createElement("button",{className:"btn primary",onClick:()=>{const f=document.getElementById("loginForm");if(f&&f.requestSubmit) f.requestSubmit();}},"Iniciar sesión"),
@@ -239,12 +244,16 @@ function App(){
         ):null
       ):
       (route==="landing"?
-        React.createElement(window.Feraytek.Landing,{usuario,onGoProfile:()=>setRoute("profile"),onGoCatalog:()=>setRoute("catalog")})
+        React.createElement(window.Feraytek.Landing,{usuario,onGoProfile:()=>setRoute("profile"),onGoCatalog:()=>setRoute("catalog"),onGoCart:()=>setRoute("cart")})
         : route==="profile"?
-          React.createElement(window.Feraytek.Profile,{usuario,onBackHome:()=>setRoute("landing")})
+          (window.Feraytek && window.Feraytek.Profile?React.createElement(window.Feraytek.Profile,{usuario,onBackHome:()=>setRoute("landing"),onGoCart:()=>setRoute("cart")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Perfil"))
           : route==="catalog"?
-            React.createElement(window.Feraytek.Catalog,{onViewProduct:(id)=>{setProductId(id);setRoute("product");}})
-            : React.createElement(window.Feraytek.ProductDetail,{productId,onBack:()=>setRoute("catalog")})
+            (window.Feraytek && window.Feraytek.Catalog?React.createElement(window.Feraytek.Catalog,{onViewProduct:(id)=>{setProductId(id);setRoute("product");},onGoCart:()=>setRoute("cart")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Catálogo"))
+          : route==="cart"?
+            (window.Feraytek && window.Feraytek.Cart?
+                React.createElement(window.Feraytek.Cart,{onBack:()=>setRoute("catalog")})
+                : React.createElement("div",{className:"msg error"},"No se pudo cargar la página de Carrito. Recarga la página."))
+            : (window.Feraytek && window.Feraytek.ProductDetail?React.createElement(window.Feraytek.ProductDetail,{productId,onBack:()=>setRoute("catalog"),onGoCart:()=>setRoute("cart")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Detalle"))
       )
     )
   );
@@ -270,15 +279,15 @@ function Landing({usuario,onLogout,onGoCatalog,onGoProfile}){
           React.createElement("a",{className:"menu-item"},"Ofertas"),
           React.createElement("a",{className:"menu-item"},"Contacto")
         ),
-        React.createElement("div",{className:"tools"},
-          React.createElement("div",{className:"search"},
+          React.createElement("div",{className:"tools"},
+            React.createElement("div",{className:"search"},
             React.createElement("svg",{className:"ico",viewBox:"0 0 24 24",fill:"currentColor"},React.createElement("path",{d:"M10 18a8 8 0 100-16 8 8 0 000 16zm8.7-1.3l-3.5-3.5-1.4 1.4 3.5 3.5 1.4-1.4z"})),
             React.createElement("input",{placeholder:"Buscar",className:"search-input"})
           ),
           React.createElement("button",{className:"icon-btn",title:"Mi cuenta",onClick:onLogout},
             React.createElement("svg",{className:"ico",viewBox:"0 0 24 24",fill:"currentColor"},React.createElement("path",{d:"M12 12a5 5 0 1 0-0.001-10.001A5 5 0 0 0 12 12zm0 2c-4.418 0-8 2.239-8 5v2h16v-2c0-2.761-3.582-5-8-5z"}))
           ),
-          React.createElement("button",{className:"icon-btn",title:"Carrito"},
+          React.createElement("button",{className:"icon-btn",title:"Carrito",onClick:()=>{ if(window.Feraytek && typeof window.Feraytek.go==="function"){ window.Feraytek.go("cart"); } }},
             React.createElement("svg",{className:"ico",viewBox:"0 0 24 24",fill:"currentColor"},React.createElement("path",{d:"M3 4h2l2 12h10l2-8H7"}))
           ),
           React.createElement("button",{className:"icon-btn",title:"Favoritos"},
@@ -288,7 +297,9 @@ function Landing({usuario,onLogout,onGoCatalog,onGoProfile}){
       ),
       React.createElement("div",{className:"hero"},
         React.createElement("button",{className:"arrow left",onClick:prev},
-          React.createElement("svg",{className:"ico",viewBox:"0 0 24 24",fill:"currentColor"},React.createElement("path",{d:"M15 6l-6 6 6 6"}))
+          React.createElement("svg",{className:"ico",viewBox:"0 0 24 24"},
+            React.createElement("path",{d:"M15 6l-6 6 6 6",stroke:"currentColor",fill:"none",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"})
+          )
         ),
         React.createElement("div",{className:"banner"},
           React.createElement("div",{className:"hero-left"},
@@ -306,7 +317,9 @@ function Landing({usuario,onLogout,onGoCatalog,onGoProfile}){
           )
         ),
         React.createElement("button",{className:"arrow right",onClick:next},
-          React.createElement("svg",{className:"ico",viewBox:"0 0 24 24",fill:"currentColor"},React.createElement("path",{d:"M9 6l6 6-6 6"}))
+          React.createElement("svg",{className:"ico",viewBox:"0 0 24 24"},
+            React.createElement("path",{d:"M9 6l6 6-6 6",stroke:"currentColor",fill:"none",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"})
+          )
         )
       )
     )

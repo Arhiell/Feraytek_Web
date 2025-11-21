@@ -5,7 +5,7 @@
 (function(){
   const { useState } = React;
 
-  function Landing({ usuario, onGoProfile, onGoCatalog }){
+  function Landing({ usuario, onGoProfile, onGoCatalog, onGoCart }){
     const items=[
       {title:"Nuevas Colecciones",subtitle:"Explora piezas seleccionadas con estilo moderno.",image:"https://images.unsplash.com/photo-1517705008128-1c66f59a6db1?auto=format&fit=crop&w=1600&q=60"},
       {title:"Ofertas Destacadas",subtitle:"Descubre promociones en productos premium.",image:"https://images.unsplash.com/photo-1520975596571-37c1dd3e3e77?auto=format&fit=crop&w=1600&q=60"},
@@ -18,10 +18,12 @@
 
     return (
       React.createElement("div",{className:"landing"},
-        React.createElement(window.Feraytek.Header,{onUserClick:onGoProfile,onCartClick:()=>{},onFavClick:()=>{},onNavProducts:onGoCatalog}),
+        React.createElement(window.Feraytek.Header,{onUserClick:onGoProfile,onCartClick:onGoCart,onFavClick:()=>{},onNavProducts:onGoCatalog}),
         React.createElement("div",{className:"hero"},
           React.createElement("button",{className:"arrow left",onClick:prev},
-            React.createElement("svg",{className:"ico",viewBox:"0 0 24 24",fill:"currentColor"},React.createElement("path",{d:"M15 6l-6 6 6 6"}))
+            React.createElement("svg",{className:"ico",viewBox:"0 0 24 24"},
+              React.createElement("path",{d:"M15 6l-6 6 6 6",stroke:"currentColor",fill:"none",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"})
+            )
           ),
           React.createElement("div",{className:"banner"},
             React.createElement("div",{className:"hero-left"},
@@ -39,7 +41,9 @@
             )
           ),
           React.createElement("button",{className:"arrow right",onClick:next},
-            React.createElement("svg",{className:"ico",viewBox:"0 0 24 24",fill:"currentColor"},React.createElement("path",{d:"M9 6l6 6-6 6"}))
+            React.createElement("svg",{className:"ico",viewBox:"0 0 24 24"},
+              React.createElement("path",{d:"M9 6l6 6-6 6",stroke:"currentColor",fill:"none",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"})
+            )
           )
         )
       )

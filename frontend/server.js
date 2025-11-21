@@ -44,11 +44,7 @@ const server = http.createServer((req, res) => {
   const url = req.url === "/" ? "/index.html" : req.url;
   const file = path.join(root, url);
   fs.readFile(file, (err, data) => {
-    if (err) {
-      res.writeHead(404, { "Content-Type": "text/plain" });
-      res.end("Not found");
-      return;
-    }
+    if (err) { res.writeHead(404, { "Content-Type": "text/plain" }); res.end("Not found"); return; }
     const ext = path.extname(file);
     res.writeHead(200, { "Content-Type": types[ext] || "application/octet-stream" });
     res.end(data);
