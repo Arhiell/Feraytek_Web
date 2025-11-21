@@ -5,10 +5,10 @@
 (function(){
   const { useState, useEffect } = React;
 
-  function Catalog({ onViewProduct, onGoCart }){
+  function Catalog({ onViewProduct, onGoCart, initialCategory }){
     const [items,setItems] = useState([]);
     const [cats,setCats] = useState(["Todos","Hombre","Mujer","Accesorios","Ofertas"]);
-    const [cat,setCat] = useState("Todos");
+    const [cat,setCat] = useState(initialCategory||"Todos");
     const [q,setQ] = useState("");
     const [loading,setLoading] = useState(false);
     const [err,setErr] = useState(null);
@@ -26,6 +26,13 @@
       }finally{ setLoading(false); }
     }
     useEffect(()=>{ load(); },[cat]);
+    useEffect(()=>{
+      const q0 = (window.Feraytek && window.Feraytek.searchQ) || "";
+      if(q0){ setQ(q0); load(); }
+      function onSearch(ev){ const next = (ev && ev.detail && ev.detail.q) || ""; setQ(next); load(); }
+      window.addEventListener("feraytek:search", onSearch);
+      return ()=> window.removeEventListener("feraytek:search", onSearch);
+    },[]);
 
     async function add(p){
       try{

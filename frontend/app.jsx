@@ -245,15 +245,21 @@ function App(){
       ):
       (route==="landing"?
         React.createElement(window.Feraytek.Landing,{usuario,onGoProfile:()=>setRoute("profile"),onGoCatalog:()=>setRoute("catalog"),onGoCart:()=>setRoute("cart")})
+        : route==="offers"?
+          (window.Feraytek && window.Feraytek.Offers?React.createElement(window.Feraytek.Offers,{}):React.createElement("div",{className:"msg error"},"No se pudo cargar Ofertas"))
+        : route==="contact"?
+          (window.Feraytek && window.Feraytek.Contact?React.createElement(window.Feraytek.Contact,{}):React.createElement("div",{className:"msg error"},"No se pudo cargar Contacto"))
+        : route==="favorites"?
+          (window.Feraytek && window.Feraytek.Favorites?React.createElement(window.Feraytek.Favorites,{}):React.createElement("div",{className:"msg error"},"No se pudo cargar Favoritos"))
         : route==="profile"?
           (window.Feraytek && window.Feraytek.Profile?React.createElement(window.Feraytek.Profile,{usuario,onBackHome:()=>setRoute("landing"),onGoCart:()=>setRoute("cart")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Perfil"))
-          : route==="catalog"?
-            (window.Feraytek && window.Feraytek.Catalog?React.createElement(window.Feraytek.Catalog,{onViewProduct:(id)=>{setProductId(id);setRoute("product");},onGoCart:()=>setRoute("cart")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Catálogo"))
-          : route==="cart"?
-            (window.Feraytek && window.Feraytek.Cart?
-                React.createElement(window.Feraytek.Cart,{onBack:()=>setRoute("catalog")})
-                : React.createElement("div",{className:"msg error"},"No se pudo cargar la página de Carrito. Recarga la página."))
-            : (window.Feraytek && window.Feraytek.ProductDetail?React.createElement(window.Feraytek.ProductDetail,{productId,onBack:()=>setRoute("catalog"),onGoCart:()=>setRoute("cart")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Detalle"))
+        : route==="catalog"?
+          (window.Feraytek && window.Feraytek.Catalog?React.createElement(window.Feraytek.Catalog,{onViewProduct:(id)=>{setProductId(id);setRoute("product");},onGoCart:()=>setRoute("cart")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Catálogo"))
+        : route==="cart"?
+          (window.Feraytek && window.Feraytek.Cart?
+              React.createElement(window.Feraytek.Cart,{onBack:()=>setRoute("catalog")})
+              : React.createElement("div",{className:"msg error"},"No se pudo cargar la página de Carrito. Recarga la página."))
+          : (window.Feraytek && window.Feraytek.ProductDetail?React.createElement(window.Feraytek.ProductDetail,{productId,onBack:()=>setRoute("catalog"),onGoCart:()=>setRoute("cart")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Detalle"))
       )
     )
   );
