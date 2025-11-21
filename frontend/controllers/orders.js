@@ -60,8 +60,16 @@
   }
   async function shipments(){
     const base = getBase();
-    const r = await fetch(`${base}/envios`, authInit("GET"));
-    const j = await parse(r); if(!r.ok) throw { status:r.status, ...j }; return j;
+    const urls = [ `${base}/envios`, `${base}/envios/metodos` ];
+    let lastErr = null;
+    for(const u of urls){
+      const r = await fetch(u, authInit("GET"));
+      const j = await parse(r);
+      if(r.ok) return j;
+      lastErr = { status:r.status, ...j };
+      if(r.status!==404) break;
+    }
+    throw lastErr || { status:404, message:"No se pudieron cargar envíos" };
   }
   async function shipment(id){
     const base = getBase();

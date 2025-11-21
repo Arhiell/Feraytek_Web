@@ -2,3 +2,8 @@ backend/node_modules/
 node_modules/
 Enspoind.txt
 leer.txt
+backend/.env
+frontend/.env
+dist/
+build/
+.DS_Store

@@ -34,5 +34,11 @@
     const r = await fetch(`${base}/pagos/consulta`, authInit("GET"));
     const j = await parse(r); if(!r.ok) throw { status:r.status, ...j }; return j;
   }
-  window.PaymentsController = { pay, consult };
+  async function simulateApprove(id_transaccion){
+    const base = getBase();
+    const u = `${base}/pagos/simular-aprobacion/${encodeURIComponent(id_transaccion)}`;
+    const r = await fetch(u, authJsonInit("POST", {}));
+    const j = await parse(r); if(!r.ok) throw { status:r.status, ...j }; return j;
+  }
+  window.PaymentsController = { pay, consult, simulateApprove };
 })();
