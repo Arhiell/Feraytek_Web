@@ -5,7 +5,9 @@ import dotenv from "dotenv";
 import { sequelize } from "./config/database.js";
 import authRoutes from "./routes/authRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
-import { shippingMethods, checkout } from "./controllers/cartController.js";
+import ordersRoutes from "./routes/ordersRoutes.js";
+import paymentsRoutes from "./routes/paymentsRoutes.js";
+import { shippingMethods, shippingCost, checkout } from "./controllers/cartController.js";
 import { requireAuth } from "./middlewares/auth.js";
 
 dotenv.config();
@@ -23,7 +25,11 @@ app.use(morgan("dev"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/carrito", cartRoutes);
-app.get("/api/envios/metodos", requireAuth, shippingMethods);
+app.use("/api", ordersRoutes);
+app.use("/api", paymentsRoutes);
+app.get("/api/envios", shippingMethods);
+app.get("/api/envios/metodos", shippingMethods);
+app.post("/api/envios/costo", shippingCost);
 app.post("/api/carrito/checkout", requireAuth, checkout);
 
 const PORT = process.env.PORT || 3000;

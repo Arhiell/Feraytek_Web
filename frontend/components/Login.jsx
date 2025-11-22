@@ -6,7 +6,7 @@
   const { useState } = React;
   const { useForm } = window.Feraytek;
 
-  function Login({ onLogged }){
+  function Login({ onLogged, onGoRegister }){
     const f = useForm({ identifier: "", password: "" });
     const [msg,setMsg] = useState(null);
     const [show,setShow] = useState(false);
@@ -31,7 +31,7 @@
       }
     }
 
-    return React.createElement("form",{className:"card narrow",id:"loginForm",onSubmit:(e)=>{e.preventDefault();submit();}},
+    return React.createElement("form",{className:"auth-card",id:"loginForm",onSubmit:(e)=>{e.preventDefault();submit();}},
       React.createElement("div",{className:"grid one"},
         React.createElement("div",{className:"field"},
           React.createElement("label",null,"Usuario o Email"),
@@ -57,6 +57,10 @@
       ),
       f.errors.identifier?React.createElement("div",{className:"msg error"},f.errors.identifier):null,
       f.errors.password?React.createElement("div",{className:"msg error"},f.errors.password):null,
+      React.createElement("div",{className:"auth-actions"},
+        React.createElement("button",{type:"submit",className:"btn primary"},"Iniciar sesión"),
+        React.createElement("button",{type:"button",className:"btn secondary",onClick:()=>onGoRegister&&onGoRegister()},"Registrarse")
+      ),
       msg?React.createElement("div",{className:`msg ${msg.type}`},msg.text):null
     );
   }

@@ -36,6 +36,10 @@
 
     async function add(p){
       try{
+        if(window.Feraytek && typeof window.Feraytek.requireLogin === "function"){
+          const ok = window.Feraytek.requireLogin();
+          if(!ok){ setMsg({type:"error",text:"Debes iniciar sesión para agregar al carrito"}); setTimeout(()=>setMsg(null),2000); return; }
+        }
         const id = p.id_producto||p.idProducto||p.id||p.producto_id;
         let variante_id = p.variante_id||p.id_variante||p.variant_id;
         if((variante_id===undefined||variante_id===null) && Array.isArray(p.variantes) && p.variantes.length){
@@ -48,10 +52,29 @@
         setMsg({type:"ok",text:"Agregado al carrito"}); setTimeout(()=>setMsg(null),1600);
       }catch(e){ setMsg({type:"error",text:e.message||"No se pudo agregar"}); setTimeout(()=>setMsg(null),2000); }
     }
+    function priceOf(p){
+      if(p==null) return "";
+      const base = p.precio_base!=null?p.precio_base:(p.precio!=null?p.precio:(p.price!=null?p.price:null));
+      if(base!=null) return base;
+      const vs = p.variantes||p.variations||p.opciones||p.skus||[];
+      if(Array.isArray(vs)&&vs.length){
+        const nums = vs.map(v=> (v.precio_base??v.precio??v.price) ).filter(x=> x!=null && !isNaN(Number(x)) ).map(Number);
+        if(nums.length){ return Math.min(...nums); }
+      }
+      return "";
+    }
     function card(p){
       const img = p.imagen||p.image||p.img||"https://placehold.co/600x400?text=Producto";
       const name = p.nombre||p.title||p.name||"Producto";
-      const price = p.precio!=null?p.precio:(p.price!=null?p.price:"");
+      const price = priceOf(p);
+      const vs = p.variantes||p.variations||p.opciones||p.skus||[];
+      const chips = Array.isArray(vs)?vs.slice(0,3).map((v,i)=>{
+        const nm = v?.nombre||v?.name||v?.descripcion||"Variante";
+        const pr = v?.precio_base??v?.precio??v?.price;
+        const txt = pr!=null?`${nm} · $${pr}`:nm;
+        return React.createElement("span",{key:i,className:"var-chip"},txt);
+      }):[];
+      const extra = Array.isArray(vs)&&vs.length>3?React.createElement("span",{className:"var-chip more"},`+${vs.length-3}`):null;
       return React.createElement("div",{className:"product-card"},
         React.createElement("button",{className:"fav-btn",title:"Favorito"},"❤"),
         React.createElement("div",{className:"img-wrap"},React.createElement("img",{src:img,alt:name})),
@@ -59,6 +82,7 @@
           React.createElement("div",{className:"name"},name),
           React.createElement("div",{className:"price"}, price!==""?`$${price}`:"")
         ),
+        chips.length?React.createElement("div",{className:"var-chips"},[...chips,extra].filter(Boolean)):null,
         React.createElement("div",{className:"actions"},
           React.createElement("button",{className:"btn secondary",onClick:()=>add(p)},"Agregar al carrito"),
           React.createElement("button",{className:"btn primary",onClick:()=>onViewProduct&&onViewProduct(p.id||p.id_producto||p.idProducto||p.id)},"Ver detalles")

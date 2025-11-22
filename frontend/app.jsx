@@ -221,54 +221,70 @@ function Register({onLogged,onBackToLogin}){
 }
 
 function App(){
-  const [tab,setTab]=useState("login");
+  const [tab,setTab]=useState("");
   const [usuario,setUsuario]=useState(null);
   const [route,setRoute]=useState("landing");
   const [productId,setProductId]=useState(null);
-  function logout(){localStorage.removeItem("token");setUsuario(null)}
+  function logout(){try{localStorage.removeItem("token");localStorage.removeItem("session_exp");}catch{} setUsuario(null)}
   window.Feraytek = window.Feraytek || {};
   window.Feraytek.API = window.Feraytek.API || { base:"http://localhost:3000/api" };
   try{ window.Feraytek.usuario = usuario; }catch{}
   window.Feraytek.go = (r)=>{ try{ setRoute(r); }catch{} };
   React.useEffect(()=>{ try{ window.Feraytek.route = route; window.dispatchEvent(new CustomEvent("feraytek:route",{ detail:{ route } })); }catch{} },[route]);
+  React.useEffect(()=>{
+    try{
+      const exp = Number(localStorage.getItem("session_exp")||0);
+      const tok = localStorage.getItem("token")||"";
+      if(tok && Date.now()<exp){
+        (async()=>{ try{ const me=await window.AuthController.profile(); const u=me.user||me.usuario||me; setUsuario(u||null); }catch{} })();
+      } else {
+        if(exp && Date.now()>=exp){ try{ localStorage.removeItem("token"); localStorage.removeItem("session_exp"); }catch{} }
+      }
+    }catch{}
+  },[]);
+  function handleLogged(u){ setUsuario(u); try{ localStorage.setItem("session_exp", String(Date.now()+60*60*1000)); }catch{} setTab(""); }
+  function isSessionActive(){ try{ const exp=Number(localStorage.getItem("session_exp")||0); const tok=localStorage.getItem("token")||""; return !!tok && Date.now()<exp; }catch{ return false; } }
+  function requireLogin(fn){ if(usuario && isSessionActive()){ if(typeof fn==="function") fn(); return true; } setTab("login"); return false; }
+  window.Feraytek.requireLogin = requireLogin;
   return (
-    React.createElement("div",{className:usuario?"wrap full":"wrap"},
-      !usuario?React.createElement("div",null,
-        React.createElement("div",{className:"brand"},"Feraytek"),
-        tab==="login"?
-          (window.Feraytek && window.Feraytek.Login?React.createElement(window.Feraytek.Login,{onLogged:setUsuario}):React.createElement("div",{className:"msg error"},"No se pudo cargar Login"))
-          :
-          (window.Feraytek && window.Feraytek.Register?React.createElement(window.Feraytek.Register,{onLogged:setUsuario,onBackToLogin:()=>setTab("login")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Registro")),
-        tab==="login"?React.createElement("div",{className:"bottom-actions"},
-          React.createElement("div",{className:"row"},
-            React.createElement("button",{className:"btn primary",onClick:()=>{const f=document.getElementById("loginForm");if(f&&f.requestSubmit) f.requestSubmit();}},"Iniciar sesión"),
-            React.createElement("button",{className:"btn secondary",onClick:()=>setTab("register")},"Registrarse")
+    React.createElement("div",{className:"wrap full"},
+      tab==="login"?
+        React.createElement("div",{className:"auth"},
+          React.createElement("div",{className:"auth-grid"},
+            React.createElement("div",{className:"auth-hero"},
+              React.createElement("div",{className:"brand-xl"},"Feraytek"),
+              React.createElement("h2",{className:"auth-title"},"Bienvenido"),
+              React.createElement("p",{className:"auth-sub"},"Accede para continuar con tus compras")
+            ),
+            (window.Feraytek && window.Feraytek.Login?React.createElement(window.Feraytek.Login,{onLogged:handleLogged,onGoRegister:()=>setTab("register")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Login"))
           )
-        ):null
-      ):
+        )
+      : tab==="register"?
+        (window.Feraytek && window.Feraytek.Register?React.createElement(window.Feraytek.Register,{onLogged:handleLogged,onBackToLogin:()=>setTab("login")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Registro"))
+      :
       (route==="landing"?
-        React.createElement(window.Feraytek.Landing,{usuario,onGoProfile:()=>setRoute("profile"),onGoCatalog:()=>setRoute("catalog"),onGoCart:()=>setRoute("cart")})
+        React.createElement(window.Feraytek.Landing,{usuario,onGoProfile:()=>requireLogin(()=>setRoute("profile")),onGoCatalog:()=>setRoute("catalog"),onGoCart:()=>requireLogin(()=>setRoute("cart"))})
         : route==="offers"?
           (window.Feraytek && window.Feraytek.Offers?React.createElement(window.Feraytek.Offers,{}):React.createElement("div",{className:"msg error"},"No se pudo cargar Ofertas"))
         : route==="contact"?
           (window.Feraytek && window.Feraytek.Contact?React.createElement(window.Feraytek.Contact,{}):React.createElement("div",{className:"msg error"},"No se pudo cargar Contacto"))
         : route==="favorites"?
-          (window.Feraytek && window.Feraytek.Favorites?React.createElement(window.Feraytek.Favorites,{}):React.createElement("div",{className:"msg error"},"No se pudo cargar Favoritos"))
+          (window.Feraytek && window.Feraytek.Favorites? (usuario?React.createElement(window.Feraytek.Favorites,{}):(setTab("login"),React.createElement("div",null)) ):React.createElement("div",{className:"msg error"},"No se pudo cargar Favoritos"))
         : route==="profile"?
-          (window.Feraytek && window.Feraytek.Profile?React.createElement(window.Feraytek.Profile,{usuario,onBackHome:()=>setRoute("landing"),onGoCart:()=>setRoute("cart")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Perfil"))
+          (usuario && window.Feraytek && window.Feraytek.Profile?React.createElement(window.Feraytek.Profile,{usuario,onBackHome:()=>setRoute("landing"),onGoCart:()=>setRoute("cart")}): (setTab("login"), React.createElement("div",null)))
         : route==="catalog"?
-          (window.Feraytek && window.Feraytek.Catalog?React.createElement(window.Feraytek.Catalog,{onViewProduct:(id)=>{setProductId(id);setRoute("product");},onGoCart:()=>setRoute("cart")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Catálogo"))
+          (window.Feraytek && window.Feraytek.Catalog?React.createElement(window.Feraytek.Catalog,{onViewProduct:(id)=>{setProductId(id);setRoute("product");},onGoCart:()=>requireLogin(()=>setRoute("cart"))}):React.createElement("div",{className:"msg error"},"No se pudo cargar Catálogo"))
         : route==="cart"?
-          (window.Feraytek && window.Feraytek.Cart?
+          (usuario && window.Feraytek && window.Feraytek.Cart?
               React.createElement(window.Feraytek.Cart,{onBack:()=>setRoute("catalog")})
-              : React.createElement("div",{className:"msg error"},"No se pudo cargar la página de Carrito. Recarga la página."))
+              : (setTab("login"), React.createElement("div",null)))
         : route==="checkout"?
-          (window.Feraytek && window.Feraytek.Checkout?React.createElement(window.Feraytek.Checkout,{}):React.createElement("div",{className:"msg error"},"No se pudo cargar Checkout"))
+          (usuario && window.Feraytek && window.Feraytek.Checkout?React.createElement(window.Feraytek.Checkout,{}): (setTab("login"), React.createElement("div",null)))
         : route==="support"?
           (window.Feraytek && window.Feraytek.Support?React.createElement(window.Feraytek.Support,{}):React.createElement("div",{className:"msg error"},"No se pudo cargar Soporte"))
           : route==="orders"?
-            (window.Feraytek && window.Feraytek.OrderHistory?React.createElement(window.Feraytek.OrderHistory,{}):React.createElement("div",{className:"msg error"},"No se pudo cargar Historial"))
-          : (window.Feraytek && window.Feraytek.ProductDetail?React.createElement(window.Feraytek.ProductDetail,{productId,onBack:()=>setRoute("catalog"),onGoCart:()=>setRoute("cart")}):React.createElement("div",{className:"msg error"},"No se pudo cargar Detalle"))
+            (usuario && window.Feraytek && window.Feraytek.OrderHistory?React.createElement(window.Feraytek.OrderHistory,{}): (setTab("login"), React.createElement("div",null)))
+          : (window.Feraytek && window.Feraytek.ProductDetail?React.createElement(window.Feraytek.ProductDetail,{productId,onBack:()=>setRoute("catalog"),onGoCart:()=>requireLogin(()=>setRoute("cart"))}):React.createElement("div",{className:"msg error"},"No se pudo cargar Detalle"))
       )
     )
   );

@@ -67,7 +67,6 @@
       const j = await parse(r);
       if(r.ok) return j;
       lastErr = { status:r.status, ...j };
-      if(r.status!==404) break;
     }
     throw lastErr || { status:404, message:"No se pudieron cargar envíos" };
   }
@@ -76,5 +75,10 @@
     const r = await fetch(`${base}/envios/${id}`, authInit("GET"));
     const j = await parse(r); if(!r.ok) throw { status:r.status, ...j }; return j;
   }
-  window.OrdersController = { history, order, create, shipments, shipment };
+  async function shippingCost(payload){
+    const base = getBase();
+    const r = await fetch(`${base}/envios/costo`, authJsonInit("POST", payload));
+    const j = await parse(r); if(!r.ok) throw { status:r.status, ...j }; return j;
+  }
+  window.OrdersController = { history, order, create, shipments, shipment, shippingCost };
 })();
