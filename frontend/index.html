@@ -5,17 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Acceso Feraytek</title>
     <link rel="preconnect" href="https://unpkg.com" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="/img/logo2.jpeg" type="image/jpeg" />
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/product.css" />
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script>window.Feraytek=window.Feraytek||{};window.Feraytek.API={base:"http://localhost:3000/api"};</script>
     <script src="/controllers/auth.js" defer></script>
     <script src="/controllers/cart.js" defer></script>
     <script src="/controllers/products.js" defer></script>
     <script src="/controllers/orders.js" defer></script>
     <script src="/controllers/payments.js" defer></script>
     <script src="/controllers/support.js" defer></script>
+    <script src="/controllers/favorites.js" defer></script>
     <script src="/lib/useForm.js" defer></script>
     <script src="/components/Login.jsx" defer></script>
     <script src="/components/Register.jsx" defer></script>
@@ -27,7 +29,11 @@
     <script src="/components/Profile.jsx" defer></script>
     <script src="/components/Checkout.jsx" defer></script>
     <script src="/components/OrderHistory.jsx" defer></script>
+    <script src="/components/Contact.jsx" defer></script>
     <script src="/components/Support.jsx" defer></script>
+    <script src="/components/Favorites.jsx" defer></script>
+    <script src="/components/Offers.jsx" defer></script>
+    <script src="/components/Footer.jsx" defer></script>
   </head>
   <body>
     <div id="root"></div>

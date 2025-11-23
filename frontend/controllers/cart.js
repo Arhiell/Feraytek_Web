@@ -22,7 +22,14 @@
     if(ct.includes("application/json")) { try { return await r.json(); } catch{} }
     const t = await r.text(); try { return JSON.parse(t); } catch { return { message:t||"Respuesta no válida" }; }
   }
-  function authHeaders(){ const h={}; const tok=localStorage.getItem("token")||""; if(tok) h["Authorization"]="Bearer "+tok; return h; }
+  function authHeaders(){
+    const h={};
+    try{
+      const tok = (typeof sessionStorage!=='undefined' && sessionStorage.getItem('token')) || localStorage.getItem('token') || '';
+      if(tok) h["Authorization"] = "Bearer "+tok;
+    }catch{}
+    return h;
+  }
   async function tryFetch(urls, opts){
     const headers={ ...authHeaders(), ...(opts&&opts.headers||{}) };
     for(const u of urls){

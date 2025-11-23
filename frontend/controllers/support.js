@@ -13,7 +13,7 @@
   }
   function authInit(method, payload){
     const headers = { "Content-Type":"application/json" };
-    const tok = localStorage.getItem("token")||""; if(tok) headers["Authorization"] = "Bearer "+tok;
+    const tok = sessionStorage.getItem("token") || localStorage.getItem("token") || ""; if(tok) headers["Authorization"] = "Bearer "+tok;
     const init = { method, headers, credentials:"omit" };
     if(payload) init.body = JSON.stringify(payload);
     return init;

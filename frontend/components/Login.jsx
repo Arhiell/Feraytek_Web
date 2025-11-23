@@ -15,10 +15,9 @@
       const ok = f.validate({ identifier:{required:true}, password:{required:true} });
       if(!ok) return;
       try{
-        const id = String(f.data.identifier).trim();
-        const isEmail = id.includes("@");
-        const body = isEmail ? { email:id.toLowerCase(), password:f.data.password } : { nombre_usuario:id, password:f.data.password };
-        const res = await window.AuthController.login(body);
+      const id = String(f.data.identifier).trim();
+      const body = { identificador: id, password: f.data.password };
+      const res = await window.AuthController.login(body);
         let u = res.usuario || res.user || null;
         if(!u){
           try{ const me = await window.AuthController.profile(); u = me.user || me.usuario || me || null; }catch{}

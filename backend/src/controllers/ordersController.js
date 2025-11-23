@@ -7,7 +7,8 @@ const itemSchema = Joi.object({
   id_variante: Joi.any().allow(null).optional(),
   cantidad: Joi.number().integer().min(1).required(),
   precio_unitario: Joi.number().min(0).required(),
-  iva_porcentaje: Joi.number().min(0).max(100).default(0)
+  iva_porcentaje: Joi.number().min(0).max(100).default(0),
+  nombre: Joi.string().allow("").optional()
 });
 const createSchema = Joi.object({
   envio: Joi.object({
@@ -39,7 +40,8 @@ export async function create(req,res){
         id_variante: it.id_variante!==undefined? it.id_variante : (it.variante_id!==undefined? it.variante_id : null),
         cantidad: Number(it.cantidad||1),
         precio_unitario: Number(it.precio_unitario!=null? it.precio_unitario : (it.precio_base||it.precio||0)),
-        iva_porcentaje: Number(it.iva_porcentaje!=null? it.iva_porcentaje : (it.iva||0))
+        iva_porcentaje: Number(it.iva_porcentaje!=null? it.iva_porcentaje : (it.iva||0)),
+        nombre: it.nombre||it.title||it.name||""
       })).filter(x=>x.id_producto!=null);
       const sub = normItems.reduce((acc,x)=> acc + x.precio_unitario*x.cantidad, 0);
       const iva = normItems.reduce((acc,x)=> acc + (x.precio_unitario*x.cantidad)*(Number(x.iva_porcentaje||0)/100), 0);
@@ -49,7 +51,10 @@ export async function create(req,res){
       return res.status(400).json({ message:"Datos inválidos", detalles: error.details?.map(d=>d.message)||[] });
     }
   }
-  const { envio, items, costo_envio, monto_total } = payload;
+  const { envio, items, costo_envio } = payload;
+  const subTotal = items.reduce((acc,x)=> acc + Number(x.precio_unitario||0)*Number(x.cantidad||1), 0);
+  const ivaTotal = items.reduce((acc,x)=> acc + (Number(x.precio_unitario||0)*Number(x.cantidad||1))*(Number(x.iva_porcentaje||0)/100), 0);
+  const monto_total = Number((subTotal + ivaTotal + Number(costo_envio||0)).toFixed(2));
   const userId = req.user && req.user.id;
   if(!userId) return res.status(401).json({ message:"No autorizado" });
   try{
@@ -75,14 +80,16 @@ export async function create(req,res){
           variante_id: it.id_variante!=null? String(it.id_variante) : null,
           cantidad: Number(it.cantidad||1),
           precio_unitario: Number(it.precio_unitario||0),
-          iva_porcentaje: Number(it.iva_porcentaje||0)
+          iva_porcentaje: Number(it.iva_porcentaje||0),
+          nombre: it.nombre||""
         };
         await OrderItem.create(payload,{ transaction:t });
       }
     });
     res.status(201).json({ pedido: { id: pedido.id, monto_total: pedido.monto_total } });
   }catch(e){
-    res.status(500).json({ message:"No se pudo agregar el detalle del pedido" });
+    const detalles = Array.isArray(e?.errors)? e.errors.map(x=>x.message) : undefined;
+    res.status(500).json({ message:"No se pudo agregar el detalle del pedido", detalles });
   }
 }
 

@@ -16,7 +16,7 @@ export async function get(req,res){
   res.json(items);
 }
 
-const addSchema = Joi.object({ producto_id:Joi.any().required(), cantidad:Joi.number().integer().min(1).default(1), variante_id:Joi.any().optional() });
+const addSchema = Joi.object({ producto_id:Joi.any().required(), cantidad:Joi.number().integer().min(1).default(1), variante_id:Joi.any().optional(), precio_unitario:Joi.number().min(0).optional(), iva_porcentaje:Joi.number().min(0).max(100).optional() });
 
 export async function add(req,res){
   const { value, error } = addSchema.validate(req.body||{});
@@ -29,7 +29,8 @@ export async function add(req,res){
     item.cantidad = item.cantidad + cantidad;
     await item.save();
   } else {
-    const precio_base = 0; const iva_porcentaje = 21;
+    const precio_base = Number(value.precio_unitario!=null? value.precio_unitario : 0);
+    const iva_porcentaje = Number(value.iva_porcentaje!=null? value.iva_porcentaje : 21);
     item = await CartItem.create({ ...where, cantidad, precio_base, iva_porcentaje });
   }
   const items = await CartItem.findAll({ where:{ cart_id:cart.id }, order:[["id","ASC"]] });
@@ -47,10 +48,36 @@ export async function update(req,res){
   res.json(item);
 }
 
+const updateByPayloadSchema = Joi.object({ id_producto:Joi.any().required(), id_variante:Joi.any().allow(null).optional(), cantidad:Joi.number().integer().min(1).required() });
+export async function updateItemByPayload(req,res){
+  const { value, error } = updateByPayloadSchema.validate(req.body||{});
+  if(error) return res.status(400).json({ message:"Datos inválidos" });
+  const { id_producto, id_variante, cantidad } = value;
+  const cart = await getActiveCart(req.user.id);
+  const vId = id_variante!=null? String(id_variante) : null;
+  const item = await CartItem.findOne({ where:{ cart_id:cart.id, producto_id:String(id_producto), variante_id:vId } });
+  if(!item) return res.status(404).json({ message:"Item no encontrado" });
+  item.cantidad = Number(cantidad); await item.save();
+  res.json(item);
+}
+
 export async function remove(req,res){
   const id = Number(req.params.id);
   const cart = await getActiveCart(req.user.id);
   const item = await CartItem.findOne({ where:{ id, cart_id:cart.id } });
+  if(!item) return res.status(404).json({ message:"Item no encontrado" });
+  await item.destroy();
+  res.json({ ok:true });
+}
+
+const removeByPayloadSchema = Joi.object({ id_producto:Joi.any().required(), id_variante:Joi.any().allow(null).optional() });
+export async function removeItemByPayload(req,res){
+  const { value, error } = removeByPayloadSchema.validate(req.body||{});
+  if(error) return res.status(400).json({ message:"Datos inválidos" });
+  const { id_producto, id_variante } = value;
+  const cart = await getActiveCart(req.user.id);
+  const vId = id_variante!=null? String(id_variante) : null;
+  const item = await CartItem.findOne({ where:{ cart_id:cart.id, producto_id:String(id_producto), variante_id:vId } });
   if(!item) return res.status(404).json({ message:"Item no encontrado" });
   await item.destroy();
   res.json({ ok:true });

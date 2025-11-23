@@ -23,10 +23,11 @@ const registerSchema = Joi.object({
   fecha_nacimiento: Joi.date().optional()
 });
 
-const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().required()
-});
+const loginSchema = Joi.alternatives().try(
+  Joi.object({ email: Joi.string().email().required(), password: Joi.string().required() }),
+  Joi.object({ nombre_usuario: Joi.string().min(3).max(32).required(), password: Joi.string().required() }),
+  Joi.object({ identificador: Joi.string().min(3).max(128).required(), password: Joi.string().required() })
+);
 
 export async function register(req, res) {
   const { nombre_usuario, email, password, dni, nombre, apellido, telefono, direccion, ciudad, provincia, pais, codigo_postal, fecha_nacimiento } = req.body;
@@ -41,8 +42,15 @@ export async function register(req, res) {
 }
 
 export async function login(req, res) {
-  const { email, password } = req.body;
-  const user = await User.findOne({ where: { email } });
+  const { email, nombre_usuario, identificador, password } = req.body;
+  let user = null;
+  if (email) {
+    user = await User.findOne({ where: { email } });
+  } else {
+    const uname = nombre_usuario || identificador;
+    if (!uname) return res.status(400).json({ message: "Datos inválidos" });
+    user = await User.findOne({ where: { nombre_usuario: uname } });
+  }
   if (!user) return res.status(401).json({ message: "Credenciales inválidas" });
   if (user.estado !== "activo") return res.status(403).json({ message: "Usuario inhabilitado" });
   const ok = await bcrypt.compare(password, user.password_hash);

@@ -90,7 +90,8 @@
         if(!id) throw { message:"Pedido creado sin id" };
         setPedidoId(id);
         setPagoDesc(`Pago pedido #${id}`);
-        setPagoMonto(Number(d.total||d.monto_total||(totals.total+envio.costo_envio)||0));
+        const tFinal = d && d.monto_total!=null? Number(d.monto_total) : Number((totals.total+envio.costo_envio));
+        setPagoMonto(Number(Number(tFinal||0).toFixed(2)));
         setStep(2);
       }catch(e){ const t = Array.isArray(e.detalles)? e.detalles.join(" • ") : (e.message||"No se pudo crear el pedido"); setMsg({type:"error",text:t}); }
     }
@@ -98,13 +99,9 @@
     async function realizarPago(){
       setMsg(null);
       try{
-        const res = await window.PaymentsController.pay({ id_pedido:pedidoId, descripcion:pagoDesc, monto_total:Number(pagoMonto||0) });
-        try{
-          const pr = await window.PaymentsController.consult();
-          const list = pr.items||pr.data||pr.pagos||pr.results||pr;
-          setPagos(Array.isArray(list)?list:[]);
-        }catch{}
-        setMsg({type:"ok",text:"Pago registrado"});
+        await window.PaymentsController.pay({ id_pedido:pedidoId, descripcion:pagoDesc, monto_total:Number(pagoMonto||0) });
+        setMsg({type:"ok",text:"Pago aprobado"});
+        setTimeout(()=>{ try{ if(window.Feraytek && typeof window.Feraytek.go==="function"){ window.Feraytek.go("landing"); } }catch{} }, 1200);
       }catch(e){ setMsg({type:"error",text:e.message||"No se pudo procesar el pago"}); }
     }
 
@@ -206,21 +203,14 @@
         React.createElement("h2",null,"Pago"),
         React.createElement("div",{className:"grid one"},
           React.createElement("div",{className:"field"},React.createElement("label",null,"Pedido"),React.createElement("div",null,`#${pedidoId||""}`)),
-          React.createElement("div",{className:"field"},React.createElement("label",null,"Descripción"),React.createElement("input",{className:"input",value:pagoDesc,onChange:e=>setPagoDesc(e.target.value)})),
-          React.createElement("div",{className:"field"},React.createElement("label",null,"Monto"),React.createElement("input",{className:"input",inputMode:"decimal",value:String(pagoMonto),onChange:e=>setPagoMonto(e.target.value)}))
+          React.createElement("div",{className:"field"},React.createElement("label",null,"Descripción"),React.createElement("input",{className:"input",value:pagoDesc,readOnly:true})),
+          React.createElement("div",{className:"field"},React.createElement("label",null,"Monto"),React.createElement("input",{className:"input",inputMode:"decimal",value:String(pagoMonto),readOnly:true}))
         ),
         React.createElement("div",{className:"step-actions"},
           React.createElement("button",{className:"btn secondary",onClick:()=>setStep(1)},"Atrás"),
           React.createElement("button",{className:"btn primary",onClick:realizarPago},"Pagar")
         ),
-        pagos && pagos.length? React.createElement("div",{className:"card narrow"},
-          React.createElement("h3",null,"Mis pagos"),
-          pagos.map((p,i)=>React.createElement("div",{key:i}, pagoItem(p)))
-        ) : null,
-        React.createElement("div",{className:"action-bar"},
-          React.createElement("button",{className:"btn secondary",onClick:()=>{ if(window.Feraytek) window.Feraytek.go("catalog"); }},"Volver al catálogo"),
-          React.createElement("button",{className:"btn primary",onClick:()=>{ if(window.Feraytek) window.Feraytek.go("orders"); }},"Ver mis pedidos")
-        )
+        null
       );
     }
 
@@ -240,7 +230,8 @@
       msg?React.createElement("div",{className:`msg ${msg.type}`},msg.text):null,
       loading?React.createElement("div",{className:"loading"},"Cargando..."):
       step===0?paso1(): step===1?paso2(): paso3()
-      )
+      ),
+      null
     );
   }
   window.Feraytek = window.Feraytek || {};

@@ -72,6 +72,7 @@
     return { data, set, errors, validate };
   }
 
+
   // Utilidad: restricciones de entrada numérica (tecla)
   function allowOnlyDigitsKeyDown(e){
     const ok = /^\d$/.test(e.key) || [

@@ -41,15 +41,40 @@
     const [msg,setMsg]=useState(null);
     const [toast,setToast]=useState(null);
     const [confirm,setConfirm]=useState(false);
+    const [booting,setBooting]=useState(false);
     useEffect(()=>{
       (async()=>{
         try{
+          try{
+            const s = localStorage.getItem("usuario");
+            if(false){ const u = JSON.parse(s||"{}"); const nb={...base}; Object.keys(nb).forEach(k=> f.set(k, u[k]||"")); setBase(nb); }
+          }catch{}
           const me = await window.AuthController.profile();
-          const u = me.user||me.usuario||me;
+          const u0 = me.data||me.user||me.usuario||me;
+          const flat = {
+            ...u0,
+            ...(u0&&u0.cliente||{}),
+            ...(u0&&u0.profile||{}),
+            ...(u0&&u0.perfil||{}),
+            ...(u0&&u0.admin||{})
+          };
           const nextBase={...base};
-          Object.keys(nextBase).forEach(k=>{ if(u && u[k]!==undefined) nextBase[k]=k==="fecha_nacimiento"?getFecha(u):(u[k]||""); });
+          Object.keys(nextBase).forEach(k=>{
+            let val = flat[k];
+            if(val===undefined){
+              if(k==="nombre_usuario") val = flat.username;
+              if(k==="codigo_postal") val = flat.codigoPostal||flat.postal_code||flat.zip;
+            }
+            if(k==="fecha_nacimiento"){
+              nextBase[k] = getFecha(flat);
+            } else {
+              nextBase[k] = val!=null?String(val):"";
+            }
+          });
+          if(nextBase.email) nextBase.email = String(nextBase.email).toLowerCase();
           setBase(nextBase);
           Object.keys(nextBase).forEach(k=> f.set(k,nextBase[k]||""));
+          try{}catch{}
         }catch{}
       })();
     },[]);
@@ -111,9 +136,50 @@
         )
       );
     }
+    if(booting){
+      return (
+        React.createElement("div",{className:"profile"},
+          React.createElement(window.Feraytek.Header,{onUserClick:()=>{},onCartClick:onGoCart,onFavClick:()=>{ if(window.Feraytek){ if(typeof window.Feraytek.requireLogin === "function"){ window.Feraytek.requireLogin(()=>window.Feraytek.go("favorites")); } else { window.Feraytek.go("favorites"); } } }}),
+          React.createElement("div",{className:"profile-wrap"},
+            React.createElement("div",{className:"profile-card"},
+              React.createElement("h2",{className:"page-title"},"Editar perfil"),
+              React.createElement("div",{className:"card-block"},
+                React.createElement("div",{className:"block-header"},
+                  React.createElement("div",{className:"skeleton-line thick wide"}),
+                  React.createElement("div",{className:"skeleton-gap"}),
+                  React.createElement("div",{className:"skeleton-line wide"})
+                ),
+                React.createElement("div",{className:"block-divider"}),
+                React.createElement("div",{className:"profile-grid grid two"},
+                  React.createElement("div",{className:"skeleton-line wide"}),React.createElement("div",{className:"skeleton-line wide"}),
+                  React.createElement("div",{className:"skeleton-line wide"}),React.createElement("div",{className:"skeleton-line wide"})
+                )
+              ),
+              React.createElement("div",{className:"card-block"},
+                React.createElement("div",{className:"skeleton-line thick half"}),
+                React.createElement("div",{className:"block-divider"}),
+                React.createElement("div",{className:"profile-grid grid two"},
+                  React.createElement("div",{className:"skeleton-line wide"}),React.createElement("div",{className:"skeleton-line wide"}),
+                  React.createElement("div",{className:"skeleton-line wide"}),React.createElement("div",{className:"skeleton-line wide"}),
+                  React.createElement("div",{className:"skeleton-line wide"}),React.createElement("div",{className:"skeleton-line wide"}),
+                  React.createElement("div",{className:"skeleton-line wide"})
+                )
+              ),
+              React.createElement("div",{className:"card-block"},
+                React.createElement("div",{className:"skeleton-line thick half"}),
+                React.createElement("div",{className:"block-divider"}),
+                React.createElement("div",{className:"profile-grid grid two"},
+                  React.createElement("div",{className:"skeleton-line wide"}),React.createElement("div",{className:"skeleton-line wide"})
+                )
+              )
+            )
+          )
+        )
+      );
+    }
     return (
       React.createElement("div",{className:"profile"},
-        React.createElement(window.Feraytek.Header,{onUserClick:()=>{},onCartClick:onGoCart,onFavClick:()=>{}}),
+        React.createElement(window.Feraytek.Header,{onUserClick:()=>{},onCartClick:onGoCart,onFavClick:()=>{ if(window.Feraytek){ if(typeof window.Feraytek.requireLogin === "function"){ window.Feraytek.requireLogin(()=>window.Feraytek.go("favorites")); } else { window.Feraytek.go("favorites"); } } }}),
         React.createElement("div",{className:"profile-wrap"},
           React.createElement("div",{className:"profile-card"},
             React.createElement("h2",{className:"page-title"},"Editar perfil"),
@@ -161,13 +227,12 @@
             ),
             React.createElement("div",{className:"action-bar"},
               React.createElement("button",{className:"btn secondary",onClick:cancel},"Cancelar"),
-              React.createElement("button",{className:"btn primary",onClick:openConfirm},"Guardar cambios")
+              React.createElement("button",{className:"btn primary",onClick:openConfirm},"Guardar cambios"),
+              React.createElement("button",{className:"btn secondary",onClick:()=>{ try{ window.Feraytek && typeof window.Feraytek.logout==="function"? window.Feraytek.logout() : (sessionStorage.removeItem("token"), localStorage.removeItem("session_exp"), window.Feraytek && window.Feraytek.go && window.Feraytek.go("landing")); }catch{} }},"Cerrar sesión")
             ),
             null
           ),
-          React.createElement("div",{className:"site-footer"},
-            React.createElement("div",{className:"footer-content"},"© Feraytek · Estilo premium oscuro azul")
-          )
+          null
         ),
         confirm?React.createElement("div",{className:"modal-backdrop"},
           React.createElement("div",{className:"modal-card"},

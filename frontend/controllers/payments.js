@@ -13,13 +13,13 @@
   }
   function authInit(method){
     const headers = {};
-    const tok = localStorage.getItem("token")||""; if(tok) headers["Authorization"] = "Bearer "+tok;
+    const tok = sessionStorage.getItem("token") || localStorage.getItem("token") || ""; if(tok) headers["Authorization"] = "Bearer "+tok;
     const init = { method, headers, credentials:"omit" };
     return init;
   }
   function authJsonInit(method,payload){
     const headers = { "Content-Type":"application/json" };
-    const tok = localStorage.getItem("token")||""; if(tok) headers["Authorization"] = "Bearer "+tok;
+    const tok = sessionStorage.getItem("token") || localStorage.getItem("token") || ""; if(tok) headers["Authorization"] = "Bearer "+tok;
     const init = { method, headers, credentials:"omit", body: JSON.stringify(payload) };
     return init;
   }

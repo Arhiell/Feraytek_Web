@@ -8,8 +8,11 @@
     const [err,setErr] = useState(null);
     const [detail,setDetail] = useState(null);
     function set(k,v){ setF(prev=>({...prev,[k]:v})); }
+    function isAdmin(){ try{ const r=(window.Feraytek && window.Feraytek.usuario && window.Feraytek.usuario.rol)||""; return /admin|superadmin/i.test(String(r)); }catch{ return false; } }
+    function ensureLogin(orMsg){ try{ if(window.Feraytek && typeof window.Feraytek.requireLogin==="function"){ const ok = window.Feraytek.requireLogin(()=>{}); if(!ok){ setErr(orMsg||"Debes iniciar sesión"); return false; } } }catch{} return true; }
     async function submit(e){
       e&&e.preventDefault(); setMsg(null);
+      if(!ensureLogin("Debes iniciar sesión para crear tickets")) return;
       const asunto = String(f.asunto||"").trim();
       const descripcion = String(f.descripcion||"").trim();
       const prioridad = String(f.prioridad||"media").toLowerCase();
@@ -23,10 +26,12 @@
     }
     async function load(){
       setLoading(true); setErr(null);
+      if(!ensureLogin("Debes iniciar sesión")){ setLoading(false); return; }
       try{
         const res = await window.SupportController.myTickets();
         const data = res.items||res.data||res.tickets||res.results||res;
-        setItems(Array.isArray(data)?data:[]);
+        const filtered = Array.isArray(data)? data.filter(t=>{ const s=String(t.asunto||t.subject||"").toLowerCase(); if(!isAdmin() && s.includes("problema con mi pedido")) return false; return true; }) : [];
+        setItems(filtered);
       }catch(e){ setErr(e.message||"Error al cargar reclamos"); setItems([]); }
       finally{ setLoading(false); }
     }
@@ -84,6 +89,7 @@
         err?React.createElement("div",{className:"msg error"},err):null,
         loading?React.createElement("div",{className:"loading"},"Cargando..."):
         React.createElement("div",{className:"catalog-grid"}, items.map((t,i)=>React.createElement("div",{key:(t.id||t.id_soporte||i)}, row(t)))) ,
+        null,
         detail?React.createElement("div",{className:"modal-backdrop"},
           React.createElement("div",{className:"modal-card"},
             React.createElement("div",{className:"modal-title"},detail.asunto||detail.subject||"Detalle"),
